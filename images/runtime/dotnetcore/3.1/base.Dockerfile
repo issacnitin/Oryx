@@ -5,6 +5,7 @@ RUN dotnet tool install --tool-path /dotnetcore-tools dotnet-sos
 RUN dotnet tool install --tool-path /dotnetcore-tools dotnet-trace
 RUN dotnet tool install --tool-path /dotnetcore-tools dotnet-dump
 RUN dotnet tool install --tool-path /dotnetcore-tools dotnet-counters
+RUN dotnet tool install --tool-path /dotnetcore-tools dotnet-gcdump
 
 FROM debian:buster-slim
 
