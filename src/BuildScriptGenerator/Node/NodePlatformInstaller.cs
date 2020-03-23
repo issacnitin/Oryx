@@ -9,10 +9,8 @@ namespace Microsoft.Oryx.BuildScriptGenerator.Node
 {
     public class NodePlatformInstaller : PlatformInstallerBase
     {
-        public NodePlatformInstaller(
-            IOptions<BuildScriptGeneratorOptions> commonOptions,
-            IEnvironment environment)
-            : base(commonOptions, environment)
+        public NodePlatformInstaller(IOptions<BuildScriptGeneratorOptions> commonOptions)
+            : base(commonOptions)
         {
         }
 

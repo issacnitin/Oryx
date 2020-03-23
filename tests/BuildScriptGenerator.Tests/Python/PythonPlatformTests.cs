@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.Oryx.BuildScriptGenerator.Python;
-using Microsoft.Oryx.Tests.Common;
 using Xunit;
 
 namespace Microsoft.Oryx.BuildScriptGenerator.Tests.Python
@@ -18,20 +17,24 @@ namespace Microsoft.Oryx.BuildScriptGenerator.Tests.Python
         public void GeneratedSnippet_DoesNotHaveInstallScript_IfDynamicInstallIsDisabled()
         {
             // Arrange
-            var options = new BuildScriptGeneratorOptions() { EnableDynamicInstall = false };
-            var environment = new TestEnvironment();
+            var pythonScriptGeneratorOptions = new PythonScriptGeneratorOptions();
+            var commonOptions = new BuildScriptGeneratorOptions() { EnableDynamicInstall = false };
             var installerScriptSnippet = "##INSTALLER_SCRIPT##";
             var versionProvider = new TestPythonVersionProvider(new[] { "3.7.5", "3.8.0" }, defaultVersion: "3.7.5");
             var platformInstaller = new TestPythonPlatformInstaller(
                 isVersionAlreadyInstalled: false,
                 installerScript: installerScriptSnippet,
-                Options.Create(options),
-                environment);
-            var platform = CreatePlatform(environment, versionProvider, platformInstaller, options);
+                Options.Create(commonOptions));
+            var platform = CreatePlatform(
+                versionProvider,
+                platformInstaller,
+                commonOptions,
+                pythonScriptGeneratorOptions);
             var repo = new MemorySourceRepo();
             repo.AddFile("", PythonConstants.RequirementsFileName);
             repo.AddFile("print(1)", "bla.py");
-            var context = new BuildScriptGeneratorContext { SourceRepo = repo, PythonVersion = "3.7.5" };
+            var context = new BuildScriptGeneratorContext { SourceRepo = repo };
+            context.ResolvedPythonVersion = "3.7.5";
 
             // Act
             var snippet = platform.GenerateBashBuildScriptSnippet(context);
@@ -47,20 +50,24 @@ namespace Microsoft.Oryx.BuildScriptGenerator.Tests.Python
         public void GeneratedSnippet_HasInstallationScript_IfDynamicInstallIsEnabled()
         {
             // Arrange
-            var options = new BuildScriptGeneratorOptions() { EnableDynamicInstall = true };
-            var environment = new TestEnvironment();
+            var pythonScriptGeneratorOptions = new PythonScriptGeneratorOptions();
+            var commonOptions = new BuildScriptGeneratorOptions() { EnableDynamicInstall = true };
             var installerScriptSnippet = "##INSTALLER_SCRIPT##";
             var versionProvider = new TestPythonVersionProvider(new[] { "3.7.5", "3.8.0" }, defaultVersion: "3.7.5");
             var platformInstaller = new TestPythonPlatformInstaller(
                 isVersionAlreadyInstalled: false,
                 installerScript: installerScriptSnippet,
-                Options.Create(options),
-                environment);
-            var platform = CreatePlatform(environment, versionProvider, platformInstaller, options);
+                Options.Create(commonOptions));
+            var platform = CreatePlatform(
+                versionProvider,
+                platformInstaller,
+                commonOptions,
+                pythonScriptGeneratorOptions);
             var repo = new MemorySourceRepo();
             repo.AddFile("", PythonConstants.RequirementsFileName);
             repo.AddFile("print(1)", "bla.py");
-            var context = new BuildScriptGeneratorContext { SourceRepo = repo, PythonVersion = "3.7.5" };
+            var context = new BuildScriptGeneratorContext { SourceRepo = repo };
+            context.ResolvedPythonVersion = "3.7.5";
 
             // Act
             var snippet = platform.GenerateBashBuildScriptSnippet(context);
@@ -77,20 +84,24 @@ namespace Microsoft.Oryx.BuildScriptGenerator.Tests.Python
         public void GeneratedSnippet_DoesNotHaveInstallScript_IfVersionIsAlreadyPresentOnDisk()
         {
             // Arrange
-            var options = new BuildScriptGeneratorOptions() { EnableDynamicInstall = true };
-            var environment = new TestEnvironment();
+            var pythonScriptGeneratorOptions = new PythonScriptGeneratorOptions();
+            var commonOptions = new BuildScriptGeneratorOptions() { EnableDynamicInstall = true };
             var installerScriptSnippet = "##INSTALLER_SCRIPT##";
             var versionProvider = new TestPythonVersionProvider(new[] { "3.7.5", "3.8.0" }, defaultVersion: "3.7.5");
             var platformInstaller = new TestPythonPlatformInstaller(
                 isVersionAlreadyInstalled: true,
                 installerScript: installerScriptSnippet,
-                Options.Create(options),
-                environment);
-            var platform = CreatePlatform(environment, versionProvider, platformInstaller, options);
+                Options.Create(commonOptions));
+            var platform = CreatePlatform(
+                versionProvider,
+                platformInstaller,
+                commonOptions,
+                pythonScriptGeneratorOptions);
             var repo = new MemorySourceRepo();
             repo.AddFile("", PythonConstants.RequirementsFileName);
             repo.AddFile("print(1)", "bla.py");
-            var context = new BuildScriptGeneratorContext { SourceRepo = repo, PythonVersion = "3.7.5" };
+            var context = new BuildScriptGeneratorContext { SourceRepo = repo };
+            context.ResolvedPythonVersion = "3.7.5";
 
             // Act
             var snippet = platform.GenerateBashBuildScriptSnippet(context);
@@ -153,17 +164,15 @@ namespace Microsoft.Oryx.BuildScriptGenerator.Tests.Python
         }
 
         private PythonPlatform CreatePlatform(
-            IEnvironment environment,
             IPythonVersionProvider pythonVersionProvider,
             PythonPlatformInstaller platformInstaller,
-            BuildScriptGeneratorOptions options)
+            BuildScriptGeneratorOptions commonOptions,
+            PythonScriptGeneratorOptions pythonScriptGeneratorOptions)
         {
-            var commonOptions = Options.Create(options);
-
             return new PythonPlatform(
-                commonOptions,
+                Options.Create(commonOptions),
+                Options.Create(pythonScriptGeneratorOptions),
                 pythonVersionProvider,
-                environment,
                 NullLogger<PythonPlatform>.Instance,
                 detector: null,
                 platformInstaller);
@@ -171,19 +180,19 @@ namespace Microsoft.Oryx.BuildScriptGenerator.Tests.Python
 
         private PythonPlatform CreatePlatform(string defaultVersion = null)
         {
-            var testEnv = new TestEnvironment();
             var versionProvider = new TestPythonVersionProvider(
                 supportedVersions: new[] { Common.PythonVersions.Python37Version },
                 defaultVersion: defaultVersion);
             var commonOptions = Options.Create(new BuildScriptGeneratorOptions());
+            var pythonScriptGeneratorOptions = Options.Create(new PythonScriptGeneratorOptions());
 
             return new PythonPlatform(
                 commonOptions,
+                pythonScriptGeneratorOptions,
                 versionProvider,
-                testEnv,
                 NullLogger<PythonPlatform>.Instance,
                 detector: null,
-                new PythonPlatformInstaller(commonOptions, testEnv));
+                new PythonPlatformInstaller(commonOptions));
         }
 
         private class TestPythonVersionProvider : IPythonVersionProvider
@@ -211,9 +220,8 @@ namespace Microsoft.Oryx.BuildScriptGenerator.Tests.Python
             public TestPythonPlatformInstaller(
                 bool isVersionAlreadyInstalled,
                 string installerScript,
-                IOptions<BuildScriptGeneratorOptions> commonOptions,
-                IEnvironment environment)
-                : base(commonOptions, environment)
+                IOptions<BuildScriptGeneratorOptions> commonOptions)
+                : base(commonOptions)
             {
                 _isVersionAlreadyInstalled = isVersionAlreadyInstalled;
                 _installerScript = installerScript;

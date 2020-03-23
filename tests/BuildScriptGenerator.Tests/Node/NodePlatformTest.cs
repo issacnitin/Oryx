@@ -30,11 +30,11 @@ namespace Microsoft.Oryx.BuildScriptGenerator.Tests.Node
             var nodePlatform = CreateNodePlatform(
                 commonOptions,
                 new NodeScriptGeneratorOptions { CustomNpmRunBuildCommand = expectedText },
-                new NodePlatformInstaller(Options.Create(commonOptions), new TestEnvironment()));
+                new NodePlatformInstaller(Options.Create(commonOptions)));
             var repo = new MemorySourceRepo();
             repo.AddFile(packageJson, NodeConstants.PackageJsonFileName);
             var context = CreateContext(repo);
-            context.NodeVersion = "10.10";
+            context.ResolvedNodeVersion = "10.10";
 
             // Act
             var buildScriptSnippet = nodePlatform.GenerateBashBuildScriptSnippet(context);
@@ -60,11 +60,11 @@ namespace Microsoft.Oryx.BuildScriptGenerator.Tests.Node
             var nodePlatform = CreateNodePlatform(
                 commonOptions,
                 new NodeScriptGeneratorOptions { CustomNpmRunBuildCommand = null },
-                new NodePlatformInstaller(Options.Create(commonOptions), new TestEnvironment()));
+                new NodePlatformInstaller(Options.Create(commonOptions)));
             var repo = new MemorySourceRepo();
             repo.AddFile(packageJson, NodeConstants.PackageJsonFileName);
             var context = CreateContext(repo);
-            context.NodeVersion = "10.10";
+            context.ResolvedNodeVersion = "10.10";
 
             // Act
             var buildScriptSnippet = nodePlatform.GenerateBashBuildScriptSnippet(context);
@@ -89,11 +89,11 @@ namespace Microsoft.Oryx.BuildScriptGenerator.Tests.Node
             var nodePlatform = CreateNodePlatform(
                 commonOptions,
                 new NodeScriptGeneratorOptions { CustomNpmRunBuildCommand = null },
-                new NodePlatformInstaller(Options.Create(commonOptions), new TestEnvironment()));
+                new NodePlatformInstaller(Options.Create(commonOptions)));
             var repo = new MemorySourceRepo();
             repo.AddFile(packageJson, NodeConstants.PackageJsonFileName);
             var context = CreateContext(repo);
-            context.NodeVersion = "10.10";
+            context.ResolvedNodeVersion = "10.10";
 
             // Act
             var buildScriptSnippet = nodePlatform.GenerateBashBuildScriptSnippet(context);
@@ -111,7 +111,6 @@ namespace Microsoft.Oryx.BuildScriptGenerator.Tests.Node
             var repo = new MemorySourceRepo();
             repo.AddFile(string.Empty, NodeConstants.PackageJsonFileName);
             var context = CreateContext(repo);
-            context.NodeVersion = "10.10";
 
             // Act
             var buildScriptSnippet = nodePlatform.GenerateBashBuildScriptSnippet(context);
@@ -132,7 +131,6 @@ namespace Microsoft.Oryx.BuildScriptGenerator.Tests.Node
             var repo = new MemorySourceRepo();
             repo.AddFile(string.Empty, NodeConstants.PackageJsonFileName);
             var context = CreateContext(repo);
-            context.NodeVersion = "10.10";
 
             // Act
             var buildScriptSnippet = nodePlatform.GenerateBashBuildScriptSnippet(context);
@@ -150,7 +148,6 @@ namespace Microsoft.Oryx.BuildScriptGenerator.Tests.Node
             var repo = new MemorySourceRepo();
             repo.AddFile(string.Empty, NodeConstants.PackageJsonFileName);
             var context = CreateContext(repo);
-            context.NodeVersion = "10.10";
 
             // Act
             var buildScriptSnippet = nodePlatform.GenerateBashBuildScriptSnippet(context);
@@ -194,7 +191,6 @@ namespace Microsoft.Oryx.BuildScriptGenerator.Tests.Node
             var environment = new TestEnvironment();
             var installer = new TestNodePlatformInstaller(
                 Options.Create(cliOptions),
-                environment,
                 sdkAlreadyInstalled);
 
             var versionProvider = new TestNodeVersionProvider();
@@ -253,9 +249,8 @@ namespace Microsoft.Oryx.BuildScriptGenerator.Tests.Node
 
             public TestNodePlatformInstaller(
                 IOptions<BuildScriptGeneratorOptions> cliOptions,
-                IEnvironment environment,
                 bool sdkIsAlreadyInstalled)
-                : base(cliOptions, environment)
+                : base(cliOptions)
             {
                 _sdkIsAlreadyInstalled = sdkIsAlreadyInstalled;
             }

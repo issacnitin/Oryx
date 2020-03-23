@@ -89,10 +89,10 @@ namespace Microsoft.Oryx.BuildScriptGenerator.DotNetCore
         {
             string installationScriptSnippet = null;
             if (_cliOptions.EnableDynamicInstall
-                && !_platformInstaller.IsVersionAlreadyInstalled(context.DotNetCoreRuntimeVersion))
+                && !_platformInstaller.IsVersionAlreadyInstalled(context.ResolvedDotNetCoreRuntimeVersion))
             {
                 installationScriptSnippet = _platformInstaller.GetInstallerScriptSnippet(
-                    context.DotNetCoreRuntimeVersion);
+                    context.ResolvedDotNetCoreRuntimeVersion);
             }
 
             var manifestFileProperties = new Dictionary<string, string>();
@@ -100,9 +100,9 @@ namespace Microsoft.Oryx.BuildScriptGenerator.DotNetCore
             // Write the version to the manifest file
             var versionMap = _versionProvider.GetSupportedVersions();
             manifestFileProperties[ManifestFilePropertyKeys.DotNetCoreRuntimeVersion]
-                = context.DotNetCoreRuntimeVersion;
+                = context.ResolvedDotNetCoreRuntimeVersion;
             manifestFileProperties[ManifestFilePropertyKeys.DotNetCoreSdkVersion]
-                = versionMap[context.DotNetCoreRuntimeVersion];
+                = versionMap[context.ResolvedDotNetCoreRuntimeVersion];
             manifestFileProperties[ManifestFilePropertyKeys.OperationId] = context.OperationId;
 
             var projectFile = _projectFileProvider.GetRelativePathToProjectFile(context);
@@ -111,9 +111,9 @@ namespace Microsoft.Oryx.BuildScriptGenerator.DotNetCore
                 return null;
             }
 
-            (var preBuildCommand, var postBuildCommand) = PreAndPostBuildCommandHelper.GetPreAndPostBuildScriptsOrCommands(
+            (var preBuildCommand, var postBuildCommand) = PreAndPostBuildCommandHelper.GetPreAndPostBuildCommands(
                 context.SourceRepo,
-                _environment);
+                _cliOptions);
 
             var sourceDir = _cliOptions.SourceDir;
             var temporaryDestinationDir = "/tmp/puboutput";
@@ -171,7 +171,7 @@ namespace Microsoft.Oryx.BuildScriptGenerator.DotNetCore
                     destinationDir: destinationDir,
                     hasUserSuppliedDestinationDir: hasUserSuppliedDestinationDir,
                     zipAllOutput: zipAllOutput)
-                .AppendBenvCommand($"dotnet={context.DotNetCoreRuntimeVersion}")
+                .AppendBenvCommand($"dotnet={context.ResolvedDotNetCoreRuntimeVersion}")
                 .AddScriptToRunPreBuildCommand(sourceDir: sourceDir, preBuildCommand: preBuildCommand)
                 .AppendLine("echo")
                 .AppendLine("dotnetCoreVersion=$(dotnet --version)")
@@ -244,7 +244,7 @@ namespace Microsoft.Oryx.BuildScriptGenerator.DotNetCore
         /// <inheritdoc/>
         public bool IsEnabled(RepositoryContext ctx)
         {
-            return ctx.EnableDotNetCore;
+            return _cliOptions.EnableDotNetCoreBuild;
         }
 
         /// <inheritdoc/>
@@ -269,9 +269,9 @@ namespace Microsoft.Oryx.BuildScriptGenerator.DotNetCore
         }
 
         /// <inheritdoc/>
-        public void SetVersion(BuildScriptGeneratorContext context, string version)
+        public void SetVersion(BuildScriptGeneratorContext context, string runtimeVersion)
         {
-            context.DotNetCoreRuntimeVersion = version;
+            context.ResolvedDotNetCoreRuntimeVersion = runtimeVersion;
         }
 
         /// <inheritdoc/>

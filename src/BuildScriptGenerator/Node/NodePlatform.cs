@@ -33,7 +33,7 @@ namespace Microsoft.Oryx.BuildScriptGenerator.Node
         /// <summary>
         /// Property key of Registry URL.
         /// </summary>
-        internal const string RegistryUrlPropertyKey = "registry";
+        internal const string RegistryUrlPropertyKey = "npm_registry_url";
 
         /// <summary>
         /// Property key of compress_node_modules.
@@ -112,15 +112,15 @@ namespace Microsoft.Oryx.BuildScriptGenerator.Node
         {
             string installationScriptSnippet = null;
             if (_commonOptions.EnableDynamicInstall
-                && !_platformInstaller.IsVersionAlreadyInstalled(ctx.NodeVersion))
+                && !_platformInstaller.IsVersionAlreadyInstalled(ctx.ResolvedNodeVersion))
             {
-                installationScriptSnippet = _platformInstaller.GetInstallerScriptSnippet(ctx.NodeVersion);
+                installationScriptSnippet = _platformInstaller.GetInstallerScriptSnippet(ctx.ResolvedNodeVersion);
             }
 
             var manifestFileProperties = new Dictionary<string, string>();
 
             // Write the version to the manifest file
-            manifestFileProperties[ManifestFilePropertyKeys.NodeVersion] = ctx.NodeVersion;
+            manifestFileProperties[ManifestFilePropertyKeys.NodeVersion] = ctx.ResolvedNodeVersion;
 
             var packageJson = GetPackageJsonObject(ctx.SourceRepo, _logger);
             string runBuildCommand = null;
@@ -178,7 +178,7 @@ namespace Microsoft.Oryx.BuildScriptGenerator.Node
                         runBuildCommand = string.Format(NodeConstants.PkgMgrRunBuildCommandTemplate, packageManagerCmd);
                     }
 
-                    if (scriptsNode["build:azure"] != null && !ctx.IsPackage)
+                    if (scriptsNode["build:azure"] != null && !_commonOptions.ShouldPackage)
                     {
                         runBuildAzureCommand = string.Format(
                             NodeConstants.PkgMgrRunBuildAzureCommandTemplate,
@@ -190,13 +190,19 @@ namespace Microsoft.Oryx.BuildScriptGenerator.Node
             if (packageJson?.dependencies != null)
             {
                 var depSpecs = ((JObject)packageJson.dependencies).ToObject<IDictionary<string, string>>();
-                _logger.LogDependencies(ctx.Language, ctx.NodeVersion, depSpecs.Select(d => d.Key + d.Value));
+                _logger.LogDependencies(
+                    _commonOptions.PlatformName,
+                    ctx.ResolvedNodeVersion,
+                    depSpecs.Select(d => d.Key + d.Value));
             }
 
             if (packageJson?.devDependencies != null)
             {
                 var depSpecs = ((JObject)packageJson.devDependencies).ToObject<IDictionary<string, string>>();
-                _logger.LogDependencies(ctx.Language, ctx.NodeVersion, depSpecs.Select(d => d.Key + d.Value), true);
+                _logger.LogDependencies(
+                    _commonOptions.PlatformName,
+                    ctx.ResolvedNodeVersion,
+                    depSpecs.Select(d => d.Key + d.Value), true);
             }
 
             string compressNodeModulesCommand = null;
@@ -241,7 +247,7 @@ namespace Microsoft.Oryx.BuildScriptGenerator.Node
                 AppInsightsPackageName = NodeConstants.NodeAppInsightsPackageName,
                 AppInsightsLoaderFileName = NodeAppInsightsLoader.NodeAppInsightsLoaderFileName,
                 PackageInstallerVersionCommand = packageInstallerVersionCommand,
-                RunNpmPack = ctx.IsPackage,
+                RunNpmPack = _commonOptions.ShouldPackage,
                 CustomNpmRunBuildCommand = _nodeScriptGeneratorOptions.CustomNpmRunBuildCommand,
             };
 
@@ -267,7 +273,7 @@ namespace Microsoft.Oryx.BuildScriptGenerator.Node
         /// <inheritdoc/>
         public bool IsEnabled(RepositoryContext ctx)
         {
-            return ctx.EnableNodeJs;
+            return _commonOptions.EnableNodeJSBuild;
         }
 
         /// <inheritdoc/>
@@ -295,7 +301,7 @@ namespace Microsoft.Oryx.BuildScriptGenerator.Node
         /// <inheritdoc/>
         public void SetVersion(BuildScriptGeneratorContext context, string version)
         {
-            context.NodeVersion = version;
+            context.ResolvedNodeVersion = version;
         }
 
         /// <inheritdoc/>
